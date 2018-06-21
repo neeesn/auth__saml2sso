@@ -107,7 +107,7 @@ class auth_plugin_saml2sso extends auth_plugin_base {
      * Added by Praxis
      */
     function loginpage_idp_list($wantsurl) {
-        $url = '?saml=on';
+       $url = '?saml=on';
 
         if (isset($this->config->button_url) AND !empty($this->config->button_url)) {
          $button_path = new moodle_url($this->config->button_url);
@@ -132,32 +132,25 @@ class auth_plugin_saml2sso extends auth_plugin_base {
     public function loginpage_hook() {
         global $SESSION, $CFG, $OUTPUT, $PAGE;
 
+        if(!isset($SESSION->saml)){
+            $SESSION->saml = '';
+        }
 
+        $saml = optional_param('saml', $SESSION->saml, PARAM_TEXT);
 
         /**
          * Check if dual login is enabled.
          * Can bypass IdP auth.
          * To bypass IdP auth, go to <moodle-url>/login/index.php?saml=off
-         * 
+         *
          */
-        if ((int) $this->config->dual_login) {
+        if ((int) $this->config->dual_login && $saml !== 'on') {
+            $saml = 'off';
+        }
 
-            /* changes by praxis */
-            // check if saml is set to on in the url, to redirect to the saml login
-            if(isset($_GET['saml'])=='on') {
-                $SESSION->saml='on';
-                $saml = optional_param('saml', 'on', PARAM_TEXT);
-                $this->saml2_login();
-
-            } else {
-                $SESSION->saml = 'off';
-                return;
-            }
-
-            if ($saml == 'off' || isset($SESSION->saml)) {
-                $SESSION->saml = 'off';
-                return;
-            }
+        $SESSION->saml = !empty($saml) ? $saml : 'on';
+        if (isset($SESSION->saml) && $SESSION->saml === 'off') {
+            return;
         }
 
         $this->saml2_login();
